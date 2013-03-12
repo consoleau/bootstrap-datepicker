@@ -1,5 +1,5 @@
 /* =========================================================
- * bootstrap-datepicker.js 
+ * bootstrap-datepicker.js (custom version)
  * http://www.eyecon.ro/bootstrap-datepicker
  * =========================================================
  * Copyright 2012 Stefan Petre
@@ -27,7 +27,8 @@
 		this.picker = $(DPGlobal.template)
 							.appendTo('body')
 							.on({
-								click: $.proxy(this.click, this)//,
+								click: $.proxy(this.click, this),
+								keydown: $.proxy(this.keydown, this)//,
 								//mousedown: $.proxy(this.mousedown, this)
 							});
 		this.isInput = this.element.is('input');
@@ -37,17 +38,22 @@
 			this.element.on({
 				focus: $.proxy(this.show, this),
 				//blur: $.proxy(this.hide, this),
+				keydown: $.proxy(this.keydown, this),
 				keyup: $.proxy(this.update, this)
 			});
 		} else {
 			if (this.component){
 				this.component.on('click', $.proxy(this.show, this));
+				this.component.on('keydown', $.proxy(this.keydown, this));
 			} else {
 				this.element.on('click', $.proxy(this.show, this));
+				this.element.on('keydown', $.proxy(this.keydown, this));
 			}
 		}
 	
 		this.minViewMode = options.minViewMode||this.element.data('date-minviewmode')||0;
+		this.currentDate = new Date();
+		this.minDate = options.minDate||this.element.attr('min')||0;
 		if (typeof this.minViewMode === 'string') {
 			switch (this.minViewMode) {
 				case 'months':
@@ -87,7 +93,7 @@
 	
 	Datepicker.prototype = {
 		constructor: Datepicker,
-		
+
 		show: function(e) {
 			this.picker.show();
 			this.height = this.component ? this.component.outerHeight() : this.element.outerHeight();
@@ -109,8 +115,9 @@
 				type: 'show',
 				date: this.date
 			});
+
 		},
-		
+
 		hide: function(){
 			this.picker.hide();
 			$(window).off('resize', this.place);
@@ -245,8 +252,53 @@
 				year += 1;
 			}
 			yearCont.html(html);
+
+			if (this.minDate) {
+				this.updateNavArrows();
+			}
+
 		},
-		
+
+		updateNavArrows: function() {
+
+			var d = new Date(this.viewDate),
+				year = d.getFullYear(),
+				month = d.getMonth(),
+				visibilityStatus = 'visible';
+
+			switch (this.viewMode) {
+				case 0:
+					if (year <= this.currentDate.getFullYear() && month <= this.currentDate.getMonth()) {
+						visibilityStatus = 'hidden'
+					}
+					break;
+				case 1:
+				case 2:
+					if (year <= this.currentDate.getFullYear()) {
+						visibilityStatus = 'hidden'
+					}
+					break;
+			}
+			this.picker.find('.prev').css({visibility: visibilityStatus});
+		},
+
+		keydown: function(e){
+			switch(e.keyCode){
+				case 27: // escape
+					this.hide();
+					e.preventDefault();
+					break;
+
+				case 13: // enter
+					this.hide();
+					e.preventDefault();
+					break;
+				case 9: // tab
+					this.hide();
+					break;
+			}
+		},
+
 		click: function(e) {
 			e.stopPropagation();
 			e.preventDefault();
@@ -309,6 +361,8 @@
 								date: this.date,
 								viewMode: DPGlobal.modes[this.viewMode].clsName
 							});
+
+							this.hide();
 						}
 						break;
 				}
@@ -452,9 +506,9 @@
 		},
 		headTemplate: '<thead>'+
 							'<tr>'+
-								'<th class="prev">&lsaquo;</th>'+
+								'<th class="prev"><i class="icon-arrow-left"/></th>'+
 								'<th colspan="5" class="switch"></th>'+
-								'<th class="next">&rsaquo;</th>'+
+								'<th class="next"><i class="icon-arrow-right"/></th>'+
 							'</tr>'+
 						'</thead>',
 		contTemplate: '<tbody><tr><td colspan="7"></td></tr></tbody>'
