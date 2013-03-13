@@ -22,6 +22,8 @@
 	// Picker object
 	
 	var Datepicker = function(element, options){
+		var currentDate = new Date()
+
 		this.element = $(element);
 		this.format = DPGlobal.parseFormat(options.format||this.element.data('date-format')||'mm/dd/yyyy');
 		this.picker = $(DPGlobal.template)
@@ -37,7 +39,7 @@
 		if (this.isInput) {
 			this.element.on({
 				focus: $.proxy(this.show, this),
-				//blur: $.proxy(this.hide, this),
+				blur: $.proxy(this.blur, this),
 				keydown: $.proxy(this.keydown, this),
 				keyup: $.proxy(this.update, this)
 			});
@@ -52,7 +54,7 @@
 		}
 	
 		this.minViewMode = options.minViewMode||this.element.data('date-minviewmode')||0;
-		this.currentDate = new Date();
+		this.currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 0, 0, 0, 0);
 		this.minDate = options.minDate||this.element.attr('min')||0;
 		if (typeof this.minViewMode === 'string') {
 			switch (this.minViewMode) {
@@ -162,6 +164,16 @@
 				top: offset.top + this.height,
 				left: offset.left
 			});
+		},
+
+		blur: function() {
+			this.checkMinDate();
+		},
+
+		checkMinDate: function() {
+			if (this.minDate && this.date < this.currentDate) {
+				this.setValue(this.currentDate);
+			}
 		},
 		
 		update: function(newDate){
@@ -285,15 +297,17 @@
 		keydown: function(e){
 			switch(e.keyCode){
 				case 27: // escape
+					this.checkMinDate();
 					this.hide();
 					e.preventDefault();
 					break;
 
 				case 13: // enter
+					this.checkMinDate();
 					this.hide();
-					e.preventDefault();
 					break;
 				case 9: // tab
+					this.checkMinDate();
 					this.hide();
 					break;
 			}
