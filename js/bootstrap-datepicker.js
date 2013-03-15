@@ -108,11 +108,7 @@
 			if (!this.isInput) {
 			}
 			var that = this;
-			$(document).on('mousedown', function(ev){
-				if ($(ev.target).closest('.datepicker').length == 0) {
-					that.hide();
-				}
-			});
+
 			this.element.trigger({
 				type: 'show',
 				date: this.date
@@ -168,6 +164,7 @@
 
 		blur: function() {
 			this.checkMinDate();
+			this.hide();
 		},
 
 		checkMinDate: function() {
@@ -299,6 +296,7 @@
 				case 27: // escape
 					this.checkMinDate();
 					this.hide();
+					this.element.blur();
 					e.preventDefault();
 					break;
 
