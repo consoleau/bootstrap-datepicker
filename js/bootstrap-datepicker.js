@@ -18,28 +18,30 @@
  * ========================================================= */
  
 !function( $ ) {
-	
+
 	// Picker object
-	
+
 	var Datepicker = function(element, options){
-		var currentDate = new Date()
+		var currentDate = new Date(),
+			that = this;
 
 		this.element = $(element);
 		this.format = DPGlobal.parseFormat(options.format||this.element.data('date-format')||'mm/dd/yyyy');
 		this.picker = $(DPGlobal.template)
-							.appendTo('body')
-							.on({
-								click: $.proxy(this.click, this),
-								keydown: $.proxy(this.keydown, this)//,
-								//mousedown: $.proxy(this.mousedown, this)
-							});
+			.appendTo('body')
+			.on({
+				click: $.proxy(this.click, this),
+				keydown: $.proxy(this.keydown, this)//,
+				//mousedown: $.proxy(this.mousedown, this)
+			});
 		this.isInput = this.element.is('input');
 		this.component = this.element.is('.date') ? this.element.find('.add-on') : false;
-		
+
 		if (this.isInput) {
 			this.element.on({
 				focus: $.proxy(this.show, this),
-				blur: $.proxy(this.blur, this),
+				mousedown:  $.proxy(this.toggle, this),
+				blur: $.proxy(this.click, this),
 				keydown: $.proxy(this.keydown, this),
 				keyup: $.proxy(this.update, this)
 			});
@@ -52,7 +54,14 @@
 				this.element.on('keydown', $.proxy(this.keydown, this));
 			}
 		}
-	
+
+		$(document).on('mousedown', function (e) {
+			// Clicked outside the datepicker, hide it
+			if ($(e.target).closest('#'+that.element.attr('id')+', .datepicker.dropdown-menu').length === 0) {
+				that.hide();
+			}
+		});
+
 		this.minViewMode = options.minViewMode||this.element.data('date-minviewmode')||0;
 		this.currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 0, 0, 0, 0);
 		this.minDate = options.minDate||this.element.attr('min')||0;
@@ -92,7 +101,7 @@
 		this.update();
 		this.showMode();
 	};
-	
+
 	Datepicker.prototype = {
 		constructor: Datepicker,
 
@@ -130,7 +139,7 @@
 				date: this.date
 			});
 		},
-		
+
 		set: function() {
 			var formated = DPGlobal.formatDate(this.date, this.format);
 			if (!this.isInput) {
@@ -142,7 +151,7 @@
 				this.element.prop('value', formated);
 			}
 		},
-		
+
 		setValue: function(newDate) {
 			if (typeof newDate === 'string') {
 				this.date = DPGlobal.parseDate(newDate, this.format);
@@ -153,7 +162,7 @@
 			this.viewDate = new Date(this.date.getFullYear(), this.date.getMonth(), 1, 0, 0, 0, 0);
 			this.fill();
 		},
-		
+
 		place: function(){
 			var offset = this.component ? this.component.offset() : this.element.offset();
 			this.picker.css({
@@ -162,9 +171,12 @@
 			});
 		},
 
-		blur: function() {
+		blur: function(e) {
 			this.checkMinDate();
-			this.hide();
+		},
+
+		toggle: function(e) {
+			this.picker.toggle();
 		},
 
 		checkMinDate: function() {
@@ -207,7 +219,7 @@
 				month = d.getMonth(),
 				currentDate = this.date.valueOf();
 			this.picker.find('.datepicker-days th:eq(1)')
-						.text(DPGlobal.dates.months[month]+' '+year);
+				.text(DPGlobal.dates.months[month]+' '+year);
 			var prevMonth = new Date(year, month-1, 28,0,0,0,0),
 				day = DPGlobal.getDaysInMonth(prevMonth.getFullYear(), prevMonth.getMonth());
 			prevMonth.setDate(day);
@@ -238,12 +250,12 @@
 			}
 			this.picker.find('.datepicker-days tbody').empty().append(html.join(''));
 			var currentYear = this.date.getFullYear();
-			
+
 			var months = this.picker.find('.datepicker-months')
-						.find('th:eq(1)')
-							.text(year)
-							.end()
-						.find('span').removeClass('active');
+				.find('th:eq(1)')
+				.text(year)
+				.end()
+				.find('span').removeClass('active');
 			if (currentYear === year) {
 				months.eq(this.date.getMonth()).addClass('active');
 			}
@@ -251,10 +263,10 @@
 			html = '';
 			year = parseInt(year/10, 10) * 10;
 			var yearCont = this.picker.find('.datepicker-years')
-								.find('th:eq(1)')
-									.text(year + '-' + (year + 9))
-									.end()
-								.find('td');
+				.find('th:eq(1)')
+				.text(year + '-' + (year + 9))
+				.end()
+				.find('td');
 			year -= 1;
 			for (var i = -1; i < 11; i++) {
 				html += '<span class="year'+(i === -1 || i === 10 ? ' old' : '')+(currentYear === year ? ' active' : '')+'">'+year+'</span>';
@@ -326,8 +338,8 @@
 							case 'next':
 								this.viewDate['set'+DPGlobal.modes[this.viewMode].navFnc].call(
 									this.viewDate,
-									this.viewDate['get'+DPGlobal.modes[this.viewMode].navFnc].call(this.viewDate) + 
-									DPGlobal.modes[this.viewMode].navStep * (target[0].className === 'prev' ? -1 : 1)
+									this.viewDate['get'+DPGlobal.modes[this.viewMode].navFnc].call(this.viewDate) +
+										DPGlobal.modes[this.viewMode].navStep * (target[0].className === 'prev' ? -1 : 1)
 								);
 								this.fill();
 								this.set();
@@ -429,7 +441,7 @@
 				clsName: 'years',
 				navFnc: 'FullYear',
 				navStep: 10
-		}],
+			}],
 		dates:{
 			days: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
 			daysShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
@@ -533,17 +545,18 @@
 								'</table>'+
 							'</div>'+
 							'<div class="datepicker-months">'+
-								'<table class="table-condensed">'+
-									DPGlobal.headTemplate+
-									DPGlobal.contTemplate+
-								'</table>'+
-							'</div>'+
-							'<div class="datepicker-years">'+
+									'<table class="table-condensed">'+
+										DPGlobal.headTemplate+
+										DPGlobal.contTemplate+
+									'</table>'+
+								'</div>'+
+								'<div class="datepicker-years">'+
 								'<table class="table-condensed">'+
 									DPGlobal.headTemplate+
 									DPGlobal.contTemplate+
 								'</table>'+
 							'</div>'+
 						'</div>';
+
 
 }( window.jQuery );
