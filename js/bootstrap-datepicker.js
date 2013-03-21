@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * ========================================================= */
- 
+
 !function( $ ) {
 
 	// Picker object
@@ -63,6 +63,7 @@
 		});
 
 		this.minViewMode = options.minViewMode||this.element.data('date-minviewmode')||0;
+		this.fixedPosition = options.fixedPosition||this.element.data('date-fixedposition')||0;
 		this.currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 0, 0, 0, 0);
 		this.minDate = options.minDate||this.element.attr('min')||0;
 		if (typeof this.minViewMode === 'string') {
@@ -164,11 +165,19 @@
 		},
 
 		place: function(){
-			var offset = this.component ? this.component.offset() : this.element.offset();
-			this.picker.css({
-				top: offset.top + this.height,
-				left: offset.left
-			});
+
+			var offset = this.component ? this.component.offset() : this.element.offset(),
+				pickerStyle = { left: offset.left };
+
+			if (this.fixedPosition) {
+				pickerStyle.top = this.element.offset().top - $(window).scrollTop() + this.element.height() + 10;
+				pickerStyle.position = 'fixed';
+			}
+			else {
+				pickerStyle.top = offset.top + this.height;
+			}
+
+			this.picker.css(pickerStyle);
 		},
 
 		blur: function(e) {
