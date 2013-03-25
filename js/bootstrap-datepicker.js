@@ -64,6 +64,12 @@
 
 		this.minViewMode = options.minViewMode||this.element.data('date-minviewmode')||0;
 		this.fixedPosition = options.fixedPosition||this.element.data('date-fixedposition')||0;
+
+		// runtime validate data (enabled by default)
+		this.validateData = options.validateData||this.element.data('date-validatedata')||1;
+		this.validateDataDelimeter = options.validateDataDelimeter||this.element.data('date-validatedatadelimeter')||'/';
+		this.validateTemplate = new RegExp('^\\d{1,2}'+this.validateDataDelimeter+'\\d{1,2}'+this.validateDataDelimeter+'\\d{2,4}$');
+
 		this.currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 0, 0, 0, 0);
 		this.minDate = options.minDate||this.element.attr('min')||0;
 		if (typeof this.minViewMode === 'string') {
@@ -161,6 +167,7 @@
 			}
 			this.set();
 			this.viewDate = new Date(this.date.getFullYear(), this.date.getMonth(), 1, 0, 0, 0, 0);
+
 			this.fill();
 		},
 
@@ -191,18 +198,21 @@
 		checkMinDate: function() {
 			if (this.minDate && this.date < this.currentDate) {
 				this.setValue(this.currentDate);
+				this.update(this.currentDate);
 			}
 		},
-		
+
 		update: function(newDate){
+
 			this.date = DPGlobal.parseDate(
 				typeof newDate === 'string' ? newDate : (this.isInput ? this.element.prop('value') : this.element.data('date')),
 				this.format
 			);
 			this.viewDate = new Date(this.date.getFullYear(), this.date.getMonth(), 1, 0, 0, 0, 0);
+
 			this.fill();
 		},
-		
+
 		fillDow: function(){
 			var dowCnt = this.weekStart;
 			var html = '<tr>';
@@ -212,7 +222,7 @@
 			html += '</tr>';
 			this.picker.find('.datepicker-days thead').append(html);
 		},
-		
+
 		fillMonths: function(){
 			var html = '';
 			var i = 0
@@ -221,7 +231,7 @@
 			}
 			this.picker.find('.datepicker-months td').append(html);
 		},
-		
+
 		fill: function() {
 			var d = new Date(this.viewDate),
 				year = d.getFullYear(),
@@ -268,7 +278,7 @@
 			if (currentYear === year) {
 				months.eq(this.date.getMonth()).addClass('active');
 			}
-			
+
 			html = '';
 			year = parseInt(year/10, 10) * 10;
 			var yearCont = this.picker.find('.datepicker-years')
@@ -330,11 +340,13 @@
 					this.hide();
 					break;
 			}
+
 		},
 
 		click: function(e) {
 			e.stopPropagation();
 			e.preventDefault();
+
 			var target = $(e.target).closest('span, td, th');
 			if (target.length === 1) {
 				switch(target[0].nodeName.toLowerCase()) {
@@ -400,13 +412,22 @@
 						break;
 				}
 			}
+
+			if (e.type == 'blur') {
+				if (this.validateData) {
+					if (!this.validateTemplate.test(this.element.val())) {
+						this.setValue(this.currentDate);
+						this.update(this.currentDate);
+					}
+				}
+			}
 		},
-		
+
 		mousedown: function(e){
 			e.stopPropagation();
 			e.preventDefault();
 		},
-		
+
 		showMode: function(dir) {
 			if (dir) {
 				this.viewMode = Math.max(this.minViewMode, Math.min(2, this.viewMode + dir));
@@ -414,7 +435,7 @@
 			this.picker.find('>div').hide().filter('.datepicker-'+DPGlobal.modes[this.viewMode].clsName).show();
 		}
 	};
-	
+
 	$.fn.datepicker = function ( option, val ) {
 		return this.each(function () {
 			var $this = $(this),
@@ -433,7 +454,7 @@
 		}
 	};
 	$.fn.datepicker.Constructor = Datepicker;
-	
+
 	var DPGlobal = {
 		modes: [
 			{
@@ -502,15 +523,18 @@
 							date.setFullYear(2000 + val);
 							break;
 						case 'yyyy':
-							if (val <= max) {
-								val = thousands + val
-							}
 
-							if (val > (thousands + max)) {
-								val = (thousands + max);
-							}
-							else if (val < year) {
-								val = year
+							if (this.minDate) {
+								if (val <= max) {
+									val = thousands + val
+								}
+
+								if (val > (thousands + max)) {
+									val = (thousands + max);
+								}
+								else if (val < year) {
+									val = year
+								}
 							}
 
 							year = val;
@@ -537,7 +561,7 @@
 			}
 			return date.join(format.separator);
 		},
-		headTemplate: '<thead>'+
+		headTemplate:   '<thead>'+
 							'<tr>'+
 								'<th class="prev"><i class="icon-arrow-left"/></th>'+
 								'<th colspan="5" class="switch"></th>'+
@@ -554,15 +578,15 @@
 								'</table>'+
 							'</div>'+
 							'<div class="datepicker-months">'+
-									'<table class="table-condensed">'+
-										DPGlobal.headTemplate+
-										DPGlobal.contTemplate+
-									'</table>'+
-								'</div>'+
-								'<div class="datepicker-years">'+
 								'<table class="table-condensed">'+
 									DPGlobal.headTemplate+
 									DPGlobal.contTemplate+
+								'</table>'+
+							'</div>'+
+							'<div class="datepicker-years">'+
+								'<table class="table-condensed">'+
+								DPGlobal.headTemplate+
+								DPGlobal.contTemplate+
 								'</table>'+
 							'</div>'+
 						'</div>';
